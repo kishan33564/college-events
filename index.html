@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>College Event Ticketing</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="animated-bg" aria-hidden="true">
+    <span class="bg-blob blob-a"></span>
+    <span class="bg-blob blob-b"></span>
+    <span class="bg-blob blob-c"></span>
+  </div>
+  <!-- ===== SPLASH ===== -->
+  <div id="splash">
+    <div class="splash-bg">
+      <div class="splash-orb orb1"></div>
+      <div class="splash-orb orb2"></div>
+      <div class="splash-orb orb3"></div>
+    </div>
+    <div class="splash-logo">
+      <div class="ev">College events</div>
+      <div class="tagline">tickets booking</div>
+      <div class="splash-bar">
+        <div class="splash-bar-fill"></div>
+      </div>
+      <div class="splash-enter">
+        <button onclick="enterApp()">open ✦</button>
+      </div>
+    </div>
+  </div>
+  <!-- ===== MAIN APP ===== -->
+  <div id="app">
+    <!-- NAVBAR -->
+    <nav>
+      <div class="nav-logo" onclick="showPage('home')">CollegeEvent</div>
+      <div class="nav-links">
+        <button class="nav-btn active" id="nav-home" onclick="showPage('home')">🏠 Home</button>
+        <button class="nav-btn" id="nav-events" onclick="showPage('events')">🎟 Events</button>
+        <button class="nav-btn cta" id="nav-admin" onclick="showPage('admin')">⚙️ Admin</button>
+      </div>
+    </nav>
+    <!-- ===== HOME PAGE ===== -->
+    <div class="page active" id="page-home">
+      <section id="home-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+          <div class="hero-badge"><span></span>Your Campus Events Hub</div>
+          <h1 class="hero-title">Explore event &. Register.<br><span class="grad">Enjoy the event.</span></h1>
+          <p class="hero-sub">Book tickets, generate tickets, and never miss a college event again.</p>
+          <div class="hero-ctas">
+            <button class="btn-primary" onclick="showPage('events')">Browse Events 🎟</button>
+            <button class="btn-outline" onclick="showPage('admin')">Admin Portal ⚙️</button>
+          </div>
+        </div>
+      </section>
+      <div class="stats-bar" id="home-stats">
+        <div class="stat">
+          <div class="num" id="stat-events">0</div>
+          <div class="lbl">Active Events</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="stat-registrations">0</div>
+          <div class="lbl">Registrations</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="stat-colleges">1</div>
+          <div class="lbl">Institution</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="stat-past">0</div>
+          <div class="lbl">Completed Events</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">🔥 <span>Upcoming</span> Events</h2>
+          <button class="btn-outline" onclick="showPage('events')" style="padding:10px 20px;font-size:0.9rem">View All →</button>
+        </div>
+        <div class="events-grid" id="home-events-grid">
+          <div style="color:var(--muted);text-align:center;padding:40px;grid-column:1/-1">No events yet. Admin can add events!</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-header">
+          <h2 class="section-title">🏆 <span>Past</span> Events & Overview</h2>
+        </div>
+        <div class="past-grid" id="past-events-grid">
+          <div style="color:var(--muted);text-align:center;padding:40px;grid-column:1/-1">Completed events will appear here.</div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== EVENTS LIST PAGE ===== -->
+    <div class="page" id="page-events">
+      <div class="section" style="padding-top:80px">
+        <div class="section-header">
+          <h2 class="section-title">All <span>Events</span></h2>
+        </div>
+        <div class="events-grid" id="all-events-grid">
+          <div style="color:var(--muted);text-align:center;padding:60px;grid-column:1/-1">No events available. Check back soon!</div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== EVENT DETAIL PAGE ===== -->
+    <div class="page" id="page-event-detail">
+      <div style="padding-top:64px">
+        <div class="detail-hero" id="detail-hero">
+          <div class="detail-hero-ph" id="detail-poster-ph">🎉</div>
+          <div class="detail-hero-overlay">
+            <div class="detail-hero-content">
+              <button class="back-btn" onclick="showPage('events')" style="color:rgba(255,255,255,0.7)">← Back to Events</button>
+              <h1 id="detail-title">Event Name</h1>
+              <div style="display:flex;gap:10px;flex-wrap:wrap" id="detail-chips"></div>
+            </div>
+          </div>
+        </div>
+        <div class="detail-body">
+          <div class="detail-meta-grid" id="detail-meta-grid"></div>
+          <p class="detail-desc" id="detail-desc"></p>
+          <div class="register-section">
+            <h3>Ready to Join? 🚀</h3>
+            <p id="reg-section-sub">Register now and secure your spot!</p>
+            <button class="btn-primary" id="register-btn" onclick="openRegistrationModal()">Register Now →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== ADMIN PAGE ===== -->
+    <div class="page" id="page-admin">
+      <!-- LOGIN SCREEN -->
+      <div id="admin-login-screen">
+        <div class="login-wrap">
+          <div class="login-card">
+            <h2>Admin Portal</h2>
+            <p class="login-sub">Sign in or create a new account</p>
+            <div id="login-alert"></div>
+            <div id="login-form-wrap" style="display:none">
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input class="form-input" id="login-user" type="text" placeholder="Enter admin username" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-input" type="password" id="login-pass" placeholder="Enter password" />
+              </div>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:10px;font-size:0.95rem;color:var(--muted)">
+                <label style="cursor:pointer"><input type="checkbox" onchange="togglePasswordVisibility('login-pass', this.checked)" /> Show password</label>
+              </div>
+              <button class="btn-primary" style="width:100%;margin-top:8px" onclick="adminLogin()">Sign In →</button>
+              <div class="divider">or</div>
+              <button class="btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="adminGoogleLogin()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" style="width:16px;height:16px"> Continue with Google
+              </button>
+              <button class="btn-outline" style="width:100%;margin-top:8px" onclick="showForgotPasswordForm()">Forgot Password?</button>
+              <button class="btn-outline" style="width:100%;margin-top:8px" onclick="showSignupForm()">Create New Account</button>
+            </div>
+            <div id="signup-form-wrap">
+              <div class="form-group">
+                <label class="form-label">New Username</label>
+                <input class="form-input" id="signup-user" type="text" placeholder="Enter admin username" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" type="password" id="signup-pass" placeholder="Choose password" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input class="form-input" type="password" id="signup-pass2" placeholder="Confirm password" />
+                <div id="signup-pass-err" style="color: #d93025; font-size: 12px; margin-top: 6px; display: none;">Passwords do not match</div>
+              </div>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:10px;font-size:0.95rem;color:var(--muted)">
+                <label style="cursor:pointer"><input type="checkbox" onchange="toggleMultiplePasswordVisibility(['signup-pass','signup-pass2'], this.checked)" /> Show passwords</label>
+              </div>
+              <button class="btn-primary" id="signup-create-btn" style="width:100%;margin-top:8px" onclick="adminSignup()" disabled>Create Account →</button>
+              <div class="divider">or</div>
+              <button class="btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px" onclick="adminGoogleLogin()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" style="width:16px;height:16px"> Continue with Google
+              </button>
+              <button class="btn-outline" style="width:100%;margin-top:8px" onclick="showLoginForm()">Already have an account? Sign In</button>
+            </div>
+            <div id="forgot-form-wrap" style="display:none">
+              <div class="form-group">
+                <label class="form-label">Registered Username</label>
+                <input class="form-input" id="forgot-user" type="text" placeholder="Enter admin username" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input class="form-input" type="password" id="forgot-pass" placeholder="Enter new password" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input class="form-input" type="password" id="forgot-pass2" placeholder="Confirm new password" />
+                <div id="forgot-pass-err" style="color: #d93025; font-size: 12px; margin-top: 6px; display: none;">Passwords do not match</div>
+              </div>
+              <button class="btn-primary" id="forgot-reset-btn" style="width:100%;margin-top:8px" onclick="adminResetPassword()" disabled>Set New Password →</button>
+              <button class="btn-outline" style="width:100%;margin-top:8px" onclick="showLoginForm()">Back to Sign In</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ADMIN DASHBOARD -->
+      <div id="admin-dashboard" style="display:none">
+        <div class="admin-layout">
+          <div class="admin-sidebar">
+            <div class="admin-profile" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border);">
+              <img id="admin-dp" src="https://ui-avatars.com/api/?name=Admin&background=1a73e8&color=fff&rounded=true" alt="Admin DP" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+              <div>
+                <div id="admin-username-display" style="font-weight: 600; color: var(--text); font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">Admin</div>
+                <div style="font-size: 0.8rem; color: var(--muted);">Administrator</div>
+              </div>
+            </div>
+            <div class="sidebar-item active" onclick="adminNav('dashboard')">📊 Dashboard</div>
+            <div class="sidebar-item" onclick="adminNav('add-event')">➕ Add Event</div>
+            <div class="sidebar-item" onclick="adminNav('manage-events')">🗂 Manage Events</div>
+            <div class="sidebar-item" onclick="adminNav('registrations')">👥 Registrations</div>
+            <div style="margin-top:auto;padding-top:32px">
+              <div class="sidebar-item" onclick="adminLogout()" style="color:var(--danger)">🚪 Logout</div>
+            </div>
+          </div>
+          <div class="admin-main">
+            <!-- DASHBOARD -->
+            <div class="admin-section active" id="admin-dashboard-section">
+              <h2>Dashboard Overview</h2>
+              <div class="dash-grid" id="admin-dash-cards"></div>
+              <h3 style="margin-bottom:16px;font-size:1.2rem">Recent Registrations</h3>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Event</th>
+                      <th>Roll No</th>
+                      <th>Branch</th>
+                      <th>Phone</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-regs-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- ADD EVENT -->
+            <div class="admin-section" id="admin-add-event-section">
+              <h2>Add New Event</h2>
+              <div class="add-event-form">
+                <div id="add-event-alert"></div>
+                <div class="form-section-title">📌 Basic Info</div>
+                <div class="form-group">
+                  <label class="form-label">Event Name *</label>
+                  <input class="form-input" id="ev-name" placeholder="e.g. TechFest 2025" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Event Poster</label>
+                  <input class="form-input" id="ev-poster" type="file" accept="image/*" />
+                  <div class="form-hint">Upload an image file (optional)</div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date *</label>
+                    <input class="form-input" id="ev-date" type="date" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Time *</label>
+                    <input class="form-input" id="ev-time" type="time" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Venue *</label>
+                  <input class="form-input" id="ev-venue" placeholder="e.g. Main Auditorium, Block A" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select class="form-input" id="ev-category">
+                    <option>Technical</option>
+                    <option>Cultural</option>
+                    <option>Sports</option>
+                    <option>Workshop</option>
+                    <option>Seminar</option>
+                    <option>Competition</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Max Capacity</label>
+                  <input class="form-input" id="ev-capacity" type="number" placeholder="e.g. 200" value="200" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-input" id="ev-desc" rows="3" placeholder="Describe the event..."></textarea>
+                </div>
+                <div class="form-section-title">💳 Payment Settings</div>
+                <div class="toggle-row">
+                  <span class="toggle-label">Paid Event?</span>
+                  <label class="toggle"><input type="checkbox" id="ev-paid" onchange="togglePaidFields()"><span class="toggle-slider"></span></label>
+                </div>
+                <div id="paid-fields" style="display:none">
+                  <div class="form-group">
+                    <label class="form-label">Registration Fee (₹)</label>
+                    <input class="form-input" id="ev-fee" type="number" placeholder="e.g. 100" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">UPI ID / Payment Info</label>
+                    <input class="form-input" id="ev-upi" placeholder="e.g. college@paytm" />
+                    <div class="form-hint">This UPI ID will be shown to students during payment</div>
+                  </div>
+                </div>
+                <div class="form-section-title">⚙️ Status & Visibility</div>
+                <div class="form-group">
+                  <label class="form-label">Visibility</label>
+                  <select class="form-input" id="ev-visibility">
+                    <option value="public" selected>Public (Visible to everyone)</option>
+                    <option value="private">Private (Hidden from public)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Event Status</label>
+                  <select class="form-input" id="ev-status">
+                    <option value="upcoming">Upcoming</option>
+                    <option value="live">Live / Ongoing</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+                <button class="btn-primary" style="width:100%;margin-top:20px" onclick="addEvent()">Publish Event 🚀</button>
+              </div>
+            </div>
+            <!-- MANAGE EVENTS -->
+            <div class="admin-section" id="admin-manage-events-section">
+              <h2>Manage Events</h2>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Date</th>
+                      <th>Venue</th>
+                      <th>Registrations</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="manage-events-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- REGISTRATIONS -->
+            <div class="admin-section" id="admin-registrations-section">
+              <h2>Registrations</h2>
+              <div id="reg-event-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== REGISTRATION MODAL ===== -->
+    <div class="modal-overlay" id="reg-modal">
+      <div class="modal" style="max-width:560px">
+        <button class="modal-close" onclick="closeModal('reg-modal')">✕</button>
+        <div class="steps" id="reg-steps">
+          <div class="step">
+            <div class="step-dot active" id="step1-dot">1</div>
+          </div>
+          <div class="step-line" id="step-line-1" style="display:none"></div>
+          <div class="step" id="step2-wrap" style="display:none">
+            <div class="step-dot" id="step2-dot">2</div>
+          </div>
+          <div class="step-line" id="step-line-2" style="display:none"></div>
+          <div class="step" id="step3-wrap" style="display:none">
+            <div class="step-dot" id="step3-dot">3</div>
+          </div>
+        </div>
+        <!-- STEP 1: Details -->
+        <div id="reg-step-1">
+          <h2>Register for Event</h2>
+          <p class="modal-sub" id="reg-event-name-display">Fill in your details</p>
+          <div id="reg-alert"></div>
+          <div id="reg-closed-message" class="alert alert-error" style="display:none; margin-bottom:16px"></div>
+          <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="reg-name" placeholder="Your full name" /></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Branch *</label>
+              <select class="form-input" id="reg-branch">
+                <option value="">Select Branch</option>
+                <option>CSE</option>
+                <option>ECE</option>
+                <option>EEE</option>
+                <option>MECH</option>
+                <option>CIVIL</option>
+                <option>IT</option>
+                <option>AI&ML</option>
+                <option>DS</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Roll Number *</label><input class="form-input" id="reg-roll" placeholder="e.g. 22A91A0501" /></div>
+          </div>
+          <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="reg-email" type="email" placeholder="your@email.com" /></div>
+          <div class="form-group"><label class="form-label">Phone Number *</label><input class="form-input" id="reg-phone" type="tel" placeholder="10-digit mobile number" maxlength="10" /></div>
+          <div class="form-group"><label class="form-label">Year</label>
+            <select class="form-input" id="reg-year">
+              <option>1st Year</option>
+              <option>2nd Year</option>
+              <option>3rd Year</option>
+              <option>4th Year</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label">Security CAPTCHA *</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div id="captcha-display" style="background: var(--bg2); padding: 10px 20px; font-size: 1.2rem; font-weight: bold; letter-spacing: 5px; user-select: none; border-radius: 8px; color: var(--accent); font-family: monospace;"></div>
+              <button class="btn-outline" style="padding: 10px;" onclick="generateCaptcha()" type="button" title="Refresh CAPTCHA">↻</button>
+            </div>
+            <input class="form-input" id="reg-captcha" placeholder="Enter CAPTCHA" style="margin-top: 10px;" />
+          </div>
+          <button class="btn-primary" style="width:100%;margin-top:16px" id="continue-btn" onclick="regStep1()">Continue</button>
+        </div>
+        <!-- STEP 2: PAYMENT (if paid) -->
+        <div id="reg-step-2" style="display:none">
+          <h2>Complete Payment 💳</h2>
+          <p class="modal-sub">Choose your payment method</p>
+          <div class="alert alert-info">Registration Fee: <strong id="pay-amount">₹0</strong></div>
+          <div class="payment-methods">
+            <div class="pay-method" id="pay-phone" onclick="selectPayment('PhonePe')">
+              <div class="pay-icon">📱</div>
+              <div class="pay-name">PhonePe</div>
+            </div>
+            <div class="pay-method" id="pay-gpay" onclick="selectPayment('GPay')">
+              <div class="pay-icon">🅶</div>
+              <div class="pay-name">Google Pay</div>
+            </div>
+            <div class="pay-method" id="pay-paytm" onclick="selectPayment('Paytm')">
+              <div class="pay-icon">💰</div>
+              <div class="pay-name">Paytm</div>
+            </div>
+          </div>
+          <div class="pay-upi">
+            <div class="form-label" style="margin-bottom:6px">UPI ID to Pay</div>
+            <div class="form-input" style="display:flex;align-items:center;gap:8px;background:var(--bg2)">
+              <span style="color:var(--accent)">📋</span>
+              <span id="pay-upi-id" class="mono" style="font-size:0.9rem;color:var(--accent3)">college@paytm</span>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label">Transaction ID / UTR *</label>
+            <input class="form-input" id="pay-txn" placeholder="Enter transaction ID after payment" />
+          </div>
+          <div id="pay-alert"></div>
+          <button class="btn-primary" style="width:100%;margin-top:8px" onclick="confirmPayment()">Confirm Payment ✓</button>
+          <button class="btn-outline" style="width:100%;margin-top:8px" onclick="goToStep(1)">← Back</button>
+        </div>
+        <!-- STEP 3 / TICKET -->
+        <div id="reg-step-3" style="display:none">
+          <div class="success-screen">
+            <div class="success-icon">🎉</div>
+            <h2>Registration Successful!</h2>
+            <p>Your ticket has been generated. SMS confirmation sent to your phone.</p>
+            <div id="ticket-output"></div>
+            <button class="btn-primary" style="margin-top:16px" onclick="downloadTicket()">Download Ticket 📥</button>
+            <button class="btn-outline" style="margin-top:8px;margin-left:8px" onclick="closeModal('reg-modal')">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== GOOGLE LOGIN MODAL ===== -->
+    <div class="modal-overlay" id="google-modal">
+      <div class="modal" style="max-width:400px; padding: 40px; text-align: center; border-radius: 8px; background: var(--bg);">
+        <button class="modal-close" onclick="closeModal('google-modal')">✕</button>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" style="width: 75px; margin-bottom: 16px;">
+        
+        <!-- Step 1: Email -->
+        <div id="google-step-1">
+          <h2 style="font-weight: 400; font-family: 'DM Sans', sans-serif; font-size: 24px; margin-bottom: 8px; color: var(--text);">Sign in</h2>
+          <p style="margin-bottom: 32px; font-size: 16px; color: var(--text);">to continue to Admin Portal</p>
+          
+          <div style="text-align: left; margin-bottom: 40px;">
+            <input type="email" id="google-email" placeholder="Email or phone" style="width: 100%; padding: 13px 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; background: transparent; color: var(--text); outline: none;" onfocus="this.style.border='2px solid #1a73e8'" onblur="this.style.border='1px solid var(--border)'">
+            <div id="google-email-err" style="color: #d93025; font-size: 12px; margin-top: 4px; display: none;">Enter a valid email</div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="#" style="color: #1a73e8; font-weight: 500; text-decoration: none;">Create account</a>
+            <button onclick="googleNextStep()" style="background: #1a73e8; color: white; border: none; padding: 10px 24px; border-radius: 4px; font-weight: 500; font-size: 14px; cursor: pointer;">Next</button>
+          </div>
+        </div>
+        
+        <!-- Step 2: Password -->
+        <div id="google-step-2" style="display: none;">
+          <h2 style="font-weight: 400; font-family: 'DM Sans', sans-serif; font-size: 24px; margin-bottom: 8px; color: var(--text);">Welcome</h2>
+          <div style="display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 16px; padding: 4px 8px; margin-bottom: 32px; font-size: 14px; color: var(--text);">
+            <span style="margin-right: 8px;">👤</span> <strong id="google-email-display" style="font-weight: 500;"></strong>
+            <span style="cursor: pointer; margin-left: 8px;" onclick="googleBackStep()">▼</span>
+          </div>
+          
+          <div style="text-align: left; margin-bottom: 16px;">
+            <input type="password" id="google-password" placeholder="Enter your password" style="width: 100%; padding: 13px 15px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; background: transparent; color: var(--text); outline: none;" onfocus="this.style.border='2px solid #1a73e8'" onblur="this.style.border='1px solid var(--border)'">
+            <div id="google-pass-err" style="color: #d93025; font-size: 12px; margin-top: 4px; display: none;">Enter a password</div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="#" id="google-forgot-link" onclick="showGoogleForgotPassword(); return false;" style="color: #1a73e8; font-weight: 500; text-decoration: none; display: none;">Forgot password?</a>
+            <button onclick="googleSubmitLogin()" style="background: #1a73e8; color: white; border: none; padding: 10px 24px; border-radius: 4px; font-weight: 500; font-size: 14px; cursor: pointer;">Next</button>
+          </div>
+          
+          <div id="google-forgot-wrap" style="display:none; margin-top: 16px; text-align: left; border-top: 1px solid var(--border); padding-top: 16px;">
+            <div style="font-size: 13px; color: var(--muted); margin-bottom: 10px;">Set a new password for this email</div>
+            <input type="password" id="google-new-pass" placeholder="New password" style="width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; background: transparent; color: var(--text); outline: none; margin-bottom: 8px;">
+            <input type="password" id="google-new-pass2" placeholder="Confirm new password" style="width: 100%; padding: 11px 13px; border: 1px solid var(--border); border-radius: 4px; font-size: 14px; background: transparent; color: var(--text); outline: none;">
+            <div id="google-new-pass-err" style="color: #d93025; font-size: 12px; margin-top: 6px; display: none;">Passwords do not match</div>
+            <button id="google-reset-btn" onclick="googleResetPassword()" style="background: #1a73e8; color: white; border: none; padding: 9px 16px; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer; margin-top: 10px;" disabled>Set New Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ===== TICKET VERIFY MODAL ===== -->
+    <div class="modal-overlay" id="verify-modal">
+      <div class="modal" style="max-width:560px">
+        <button class="modal-close" onclick="closeModal('verify-modal')">✕</button>
+        <h2>Ticket Verification</h2>
+        <p class="modal-sub">Scanned ticket validation result</p>
+        <div id="verify-alert"></div>
+        
+        <div id="verify-success" style="display:none">
+          <div class="ticket-verify-card">
+            <div class="ticket-verify-status">✅ Valid Ticket</div>
+            <div class="ticket-verify-grid">
+              <div><span class="k">Ticket ID</span><span class="v mono" id="verify-ticket-id">-</span></div>
+              <div><span class="k">Name</span><span class="v" id="verify-name">-</span></div>
+              <div><span class="k">Roll Number</span><span class="v" id="verify-roll">-</span></div>
+              <div><span class="k">Branch</span><span class="v" id="verify-branch">-</span></div>
+              <div><span class="k">Phone</span><span class="v" id="verify-phone">-</span></div>
+              <div><span class="k">Email</span><span class="v" id="verify-email">-</span></div>
+              <div><span class="k">Event</span><span class="v" id="verify-event">-</span></div>
+              <div><span class="k">Date & Time</span><span class="v" id="verify-date-time">-</span></div>
+              <div><span class="k">Venue</span><span class="v" id="verify-venue">-</span></div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="verify-failed" style="display:none">
+          <div class="alert alert-error">Invalid or unknown ticket. Please check the QR code and try again.</div>
+        </div>
+      </div>
+    </div>
+    <footer><strong>college events</strong> —College Event Platform</footer>
+</body>
+
+</html>
